@@ -24,6 +24,8 @@ button:disabled { background: #aaa; cursor: not-allowed; }
 .n:last-child { border-bottom: none; }
 .n span:first-child { color: #555; }
 .n span:last-child { font-weight: bold; color: #222; }
+.n.max { background: #e8f5e9; padding: 8px 10px; border-radius: 6px; margin: 4px -10px; border-bottom: none; }
+.n.max span { color: #1b5e20; font-weight: bold; font-size: 1.05em; }
 .med { margin-top: 15px; padding: 15px; background: #e8f5e9; border-radius: 10px; }
 .med h3 { color: var(--p); margin: 0 0 8px; font-size: 1em; }
 .err { color: #d32f2f; text-align: center; }
@@ -68,7 +70,6 @@ const T = {
   "G": "گرم", "MG": "میلی‌گرم", "UG": "میکروگرم"
 };
 
-// دیکشنری خواص دارویی
 const M = {
   "آووکادو": "سلامت قلب (چربی مفید)، کاهش کلسترول، تقویت بینایی، سلامت پوست",
   "سیب": "تقویت ایمنی، کاهش التهاب، سلامت قلب، پیشگیری از دیابت نوع ۲",
@@ -119,10 +120,25 @@ const M = {
   "شوید": "بهبود گوارش، آرام‌بخش، ضد نفخ",
   "رزماری": "تقویت حافظه، آنتی‌اکسیدان، ضد التهاب",
   "مریم گلی": "آرام‌بخش، بهبود گوارش، ضد التهاب",
-  "گشنیز": "سم‌زدایی، بهبود گوارش، ضد التهاب"
+  "گشنیز": "سم‌زدایی، بهبود گوارش، ضد التهاب",
+  "بالنگ": "ضد نفخ، بهبود هضم، تقویت قلب و معده، آرام‌بخش، ضد سرفه، سلامت کبد",
+  "خرمالو": "تقویت ایمنی، سلامت قلب، بهبود گوارش",
+  "به": "بهبود گوارش، ضد التهاب، تقویت ایمنی",
+  "ازگیل": "ضد التهاب، تقویت ایمنی، سلامت گوارش",
+  "زالزالک": "سلامت قلب، کاهش فشار خون، آرام‌بخش",
+  "کنار": "تقویت ایمنی، سلامت کبد، ضد التهاب",
+  "شنبلیله": "کاهش قند خون، تقویت ایمنی، بهبود گوارش",
+  "سیاه دانه": "تقویت ایمنی، ضد التهاب، سلامت کبد",
+  "رازیانه": "بهبود گوارش، ضد نفخ، تقویت ایمنی",
+  "زعفران": "ضد افسردگی، تقویت ایمنی، سلامت قلب",
+  "گل محمدی": "آرام‌بخش، سلامت پوست، بهبود گوارش",
+  "گل گاوزبان": "آرام‌بخش، ضد التهاب، سلامت کبد",
+  "سنبل الطیب": "آرام‌بخش، بهبود خواب، کاهش اضطراب",
+  "خار مریم": "سلامت کبد، سم‌زدایی، آنتی‌اکسیدان",
+  "اسطوخودوس": "آرام‌بخش، بهبود خواب، کاهش اضطراب",
+  "آلوئه ورا": "سلامت پوست، بهبود گوارش، تقویت ایمنی"
 };
 
-// ترجمه نام انگلیسی میوه‌ها
 const NAME_FA = {
   "avocado": "آووکادو", "apple": "سیب", "orange": "پرتقال",
   "banana": "موز", "carrot": "هویج", "spinach": "اسفناج",
@@ -140,7 +156,12 @@ const NAME_FA = {
   "lettuce": "کاهو", "onion": "پیاز", "potato": "سیب زمینی",
   "radish": "تربچه", "turnip": "شلغم", "mushroom": "قارچ",
   "corn": "ذرت", "mint": "نعنا", "dill": "شوید",
-  "rosemary": "رزماری", "sage": "مریم گلی", "coriander": "گشنیز"
+  "rosemary": "رزماری", "sage": "مریم گلی", "coriander": "گشنیز",
+  "citron": "بالنگ", "persimmon": "خرمالو", "quince": "به",
+  "medlar": "ازگیل", "hawthorn": "زالزالک", "jujube": "کنار",
+  "fenugreek": "شنبلیله", "black seed": "سیاه دانه", "fennel": "رازیانه",
+  "saffron": "زعفران", "rose": "گل محمدی", "borage": "گل گاوزبان",
+  "valerian": "سنبل الطیب", "milk thistle": "خار مریم", "aloe vera": "آلوئه ورا"
 };
 
 const N = ["Energy","Protein","Total lipid (fat)","Carbohydrate, by difference","Fiber, total dietary","Water","Potassium, K","Calcium, Ca","Iron, Fe","Vitamin C, total ascorbic acid","Vitamin A, RAE"];
@@ -163,6 +184,7 @@ function faName(name) {
 }
 
 let currentChart = null;
+let currentChart2 = null;
 
 async function fetchFruit(name) {
   const res = await fetch(`${API_URL}?name=${encodeURIComponent(name)}`);
@@ -201,10 +223,25 @@ function getNutrients(food) {
 function renderFruitCard(food) {
   const nm = faName(food.description);
   const ct = tr(food.foodCategory || "");
-  let h = `<div class="card"><h2>📦 ${nm}</h2><p class="cat">📁 ${ct}</p>`;
-  h += `<h3 style="color:#333;font-size:1em;">🍎 مواد مغذی (۱۰۰ گرم):</h3>`;
   const mp = {};
   (food.foodNutrients || []).forEach(n => { mp[n.nutrientName] = n; });
+  
+  // پیدا کردن بیشترین ماده مؤثر
+  let maxValue = 0;
+  let maxNutrient = null;
+  N.forEach(k => {
+    if (mp[k]) {
+      const val = parseFloat(mp[k].value) || 0;
+      if (val > maxValue) {
+        maxValue = val;
+        maxNutrient = k;
+      }
+    }
+  });
+  
+  let h = `<div class="card"><h2>📦 ${nm}</h2><p class="cat">📁 ${ct}</p>`;
+  h += `<h3 style="color:#333;font-size:1em;">🍎 مواد مغذی (۱۰۰ گرم):</h3>`;
+  
   N.forEach(k => {
     if (mp[k]) {
       const n = mp[k];
@@ -214,7 +251,8 @@ function renderFruitCard(food) {
         val = (val / 4.184).toFixed(1);
         u = "کیلوکالری";
       }
-      h += `<div class="n"><span>${tr(k)}</span><span>${val} ${u}</span></div>`;
+      const cls = (k === maxNutrient) ? ' class="n max"' : ' class="n"';
+      h += `<div${cls}><span>${tr(k)}</span><span>${val} ${u}</span></div>`;
     }
   });
   h += `</div>`;
@@ -223,21 +261,50 @@ function renderFruitCard(food) {
 
 function renderChart(food) {
   if (currentChart) { currentChart.destroy(); currentChart = null; }
+  if (currentChart2) { currentChart2.destroy(); currentChart2 = null; }
+  
   const nutrients = getNutrients(food);
-  const labels = [], values = [];
+  const container = document.createElement('div');
+  
+  // نمودار درشت‌مغذی‌ها
+  const macroLabels = [], macroValues = [];
   ["Protein", "Total lipid (fat)", "Carbohydrate, by difference", "Fiber, total dietary"].forEach(k => {
     if (nutrients[k] !== undefined) {
-      labels.push(tr(k));
-      values.push(nutrients[k]);
+      macroLabels.push(tr(k));
+      macroValues.push(nutrients[k]);
     }
   });
-  const canvas = document.createElement('canvas');
-  canvas.id = 'nutrientChart';
-  const box = document.createElement('div');
-  box.className = 'chart-box';
-  box.innerHTML = '<h3>📊 نمودار درشت‌مغذی‌ها (گرم در ۱۰۰ گرم)</h3>';
-  box.appendChild(canvas);
-  return { box, labels, values };
+  
+  if (macroValues.length > 0) {
+    const canvas1 = document.createElement('canvas');
+    canvas1.id = 'macroChart';
+    const box1 = document.createElement('div');
+    box1.className = 'chart-box';
+    box1.innerHTML = '<h3>📊 درشت‌مغذی‌ها (گرم در ۱۰۰ گرم)</h3>';
+    box1.appendChild(canvas1);
+    container.appendChild(box1);
+  }
+  
+  // نمودار ریزمغذی‌ها
+  const microLabels = [], microValues = [];
+  ["Vitamin C, total ascorbic acid", "Vitamin A, RAE", "Vitamin B-6", "Iron, Fe", "Calcium, Ca", "Potassium, K"].forEach(k => {
+    if (nutrients[k] !== undefined) {
+      microLabels.push(tr(k));
+      microValues.push(nutrients[k]);
+    }
+  });
+  
+  if (microValues.length > 0) {
+    const canvas2 = document.createElement('canvas');
+    canvas2.id = 'microChart';
+    const box2 = document.createElement('div');
+    box2.className = 'chart-box';
+    box2.innerHTML = '<h3>💊 ویتامین‌ها و مواد معدنی (میلی‌گرم در ۱۰۰ گرم)</h3>';
+    box2.appendChild(canvas2);
+    container.appendChild(box2);
+  }
+  
+  return { container, macroLabels, macroValues, microLabels, microValues };
 }
 
 function renderCompare(food1, food2) {
@@ -245,16 +312,31 @@ function renderCompare(food1, food2) {
   const n2 = getNutrients(food2);
   const name1 = faName(food1.description);
   const name2 = faName(food2.description);
+  
+  // پیدا کردن بیشترین مقدار در هر میوه
+  let max1 = 0, maxN1 = null;
+  let max2 = 0, maxN2 = null;
+  N.forEach(k => {
+    if (n1[k] !== undefined && n1[k] > max1) { max1 = n1[k]; maxN1 = k; }
+    if (n2[k] !== undefined && n2[k] > max2) { max2 = n2[k]; maxN2 = k; }
+  });
+  
   let h = `<div class="cmp-title">⚖️ مقایسه ${name1} و ${name2}</div>`;
   h += `<div class="cmp-grid">`;
   h += `<div class="cmp-item"><b>🥑 ${name1}</b>`;
   N.forEach(k => {
-    if (n1[k] !== undefined) h += `<div class="row"><span>${tr(k)}</span><span>${n1[k].toFixed(1)}</span></div>`;
+    if (n1[k] !== undefined) {
+      const cls = (k === maxN1) ? ' style="font-weight:bold;color:#1b5e20;"' : '';
+      h += `<div class="row"><span${cls}>${tr(k)}</span><span${cls}>${n1[k].toFixed(1)}</span></div>`;
+    }
   });
   h += `</div>`;
   h += `<div class="cmp-item"><b>🥭 ${name2}</b>`;
   N.forEach(k => {
-    if (n2[k] !== undefined) h += `<div class="row"><span>${tr(k)}</span><span>${n2[k].toFixed(1)}</span></div>`;
+    if (n2[k] !== undefined) {
+      const cls = (k === maxN2) ? ' style="font-weight:bold;color:#1b5e20;"' : '';
+      h += `<div class="row"><span${cls}>${tr(k)}</span><span${cls}>${n2[k].toFixed(1)}</span></div>`;
+    }
   });
   h += `</div></div>`;
   return h;
@@ -303,19 +385,46 @@ async function go() {
       let h = renderFruitCard(food);
       if (M[q]) h += `<div class="med"><h3>💊 خواص دارویی ${q}:</h3><p>${M[q]}</p></div>`;
       r.innerHTML = h;
+      
+      // نمودارها
       const chartData = renderChart(food);
-      r.appendChild(chartData.box);
+      r.appendChild(chartData.container);
+      
       setTimeout(() => {
-        const ctx = document.getElementById('nutrientChart');
-        if (ctx) {
-          currentChart = new Chart(ctx, {
+        const ctx1 = document.getElementById('macroChart');
+        if (ctx1 && chartData.macroValues.length > 0) {
+          currentChart = new Chart(ctx1, {
             type: 'bar',
             data: {
-              labels: chartData.labels,
+              labels: chartData.macroLabels,
               datasets: [{
                 label: 'گرم در ۱۰۰ گرم',
-                data: chartData.values,
+                data: chartData.macroValues,
                 backgroundColor: ['#2e7d32', '#ef6c00', '#1565c0', '#6a1b9a'],
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { beginAtZero: true, ticks: { font: { family: 'Tahoma' } } },
+                x: { ticks: { font: { family: 'Tahoma' } } }
+              }
+            }
+          });
+        }
+        
+        const ctx2 = document.getElementById('microChart');
+        if (ctx2 && chartData.microValues.length > 0) {
+          currentChart2 = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+              labels: chartData.microLabels,
+              datasets: [{
+                label: 'میلی‌گرم در ۱۰۰ گرم',
+                data: chartData.microValues,
+                backgroundColor: ['#c62828', '#f9a825', '#00838f', '#6a1b9a', '#2e7d32', '#1565c0'],
                 borderRadius: 8
               }]
             },
