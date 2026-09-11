@@ -4,34 +4,49 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🍎 دانشنامه میوه و گیاه</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root { --p: #2e7d32; --bg: #f1f8e9; }
 * { box-sizing: border-box; }
 body { font-family: Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
-.box { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,.1); }
-h1 { color: var(--p); text-align: center; font-size: 1.4em; }
-.hint { text-align: center; color: #666; font-size: .9em; }
-input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 12px; font-family: inherit; }
-button { width: 100%; padding: 12px; background: var(--p); color: #fff; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-family: inherit; }
+.box { max-width: 700px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,.1); }
+h1 { color: var(--p); text-align: center; font-size: 1.4em; margin-bottom: 5px; }
+.hint { text-align: center; color: #666; font-size: .9em; margin-bottom: 15px; }
+input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 10px; font-family: inherit; }
+button { width: 100%; padding: 12px; background: var(--p); color: #fff; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-family: inherit; margin-bottom: 8px; }
 button:disabled { background: #aaa; cursor: not-allowed; }
+.btn-sec { background: #558b2f; }
+.btn-cmp { background: #ef6c00; }
 #r { margin-top: 20px; line-height: 1.8; }
 .card { margin-bottom: 15px; padding: 15px; background: #f9f9f9; border-radius: 10px; }
 .card h2 { color: var(--p); margin: 0 0 5px; font-size: 1.1em; }
 .cat { color: #888; font-size: .85em; margin: 0 0 10px; }
-.n { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #eee; font-size: .95em; }
+.n { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #eee; font-size: .95em; }
 .n:last-child { border-bottom: none; }
+.n span:first-child { color: #555; }
+.n span:last-child { font-weight: bold; color: #222; }
 .med { margin-top: 15px; padding: 15px; background: #e8f5e9; border-radius: 10px; }
 .med h3 { color: var(--p); margin: 0 0 8px; font-size: 1em; }
 .err { color: #d32f2f; text-align: center; }
 .load { color: #666; text-align: center; }
+.chart-box { margin-top: 15px; padding: 15px; background: #fff; border-radius: 10px; border: 1px solid #e0e0e0; }
+.chart-box h3 { color: var(--p); margin: 0 0 10px; font-size: 1em; text-align: center; }
+.cmp-title { text-align: center; color: #ef6c00; font-weight: bold; margin: 20px 0 10px; font-size: 1.1em; }
+.cmp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cmp-item { text-align: center; padding: 8px; background: #fff3e0; border-radius: 8px; font-size: .9em; }
+.cmp-item b { display: block; color: #e65100; margin-bottom: 4px; }
 </style>
 </head>
 <body>
 <div class="box">
 <h1>🍎🍊🥕 دانشنامه میوه و گیاه</h1>
-<p class="hint">نام میوه یا گیاه را وارد کنید (سیب، آووکادو، زنجبیل...)</p>
+<p class="hint">نام میوه یا گیاه را وارد کنید</p>
 <input type="text" id="q" placeholder="نام را وارد کنید..." autocomplete="off">
-<button id="b" onclick="go()">جستجو</button>
+<button id="b" onclick="go()">🔍 جستجو</button>
+<button class="btn-cmp" onclick="toggleCompare()">⚖️ مقایسه دو میوه</button>
+<div id="cmpBox" style="display:none;">
+  <input type="text" id="q2" placeholder="میوه دوم برای مقایسه..." autocomplete="off">
+</div>
 <div id="r"></div>
 </div>
 
@@ -87,16 +102,175 @@ const M = {
   "اسطوخودوس": "آرام‌بخش، بهبود خواب، کاهش اضطراب"
 };
 
+// ترجمه نام‌های انگلیسی میوه‌ها
+const NAME_FA = {
+  "avocado": "آووکادو", "apple": "سیب", "orange": "پرتقال",
+  "banana": "موز", "carrot": "هویج", "spinach": "اسفناج",
+  "tomato": "گوجه", "cucumber": "خیار", "ginger": "زنجبیل",
+  "turmeric": "زردچوبه", "garlic": "سیر", "pomegranate": "انار",
+  "strawberry": "توت‌فرنگی", "kiwi": "کیوی", "lemon": "لیمو",
+  "mango": "انبه", "pineapple": "آناناس", "watermelon": "هندوانه",
+  "grape": "انگور", "cabbage": "کلم", "celery": "کرفس",
+  "pepper": "فلفل دلمه", "eggplant": "بادمجان", "beet": "چغندر",
+  "olive": "زیتون", "fig": "انجیر", "coconut": "نارگیل",
+  "blueberry": "بلوبری", "chamomile": "بابونه", "cinnamon": "دارچین",
+  "basil": "ریحان", "parsley": "جعفری", "thyme": "آویشن",
+  "lavender": "اسطوخودوس"
+};
+
 const N = ["Energy","Protein","Total lipid (fat)","Carbohydrate, by difference","Fiber, total dietary","Water","Potassium, K","Calcium, Ca","Iron, Fe","Vitamin C, total ascorbic acid","Vitamin A, RAE"];
 
 const C = ["Fruits and Fruit Juices","Vegetables and Vegetable Products","Nut and Seed Products","Spices and Herbs","Legumes and Legume Products"];
 
 const tr = t => T[t] || t;
 
+// ترجمه نام انگلیسی به فارسی + حذف مناطق آمریکا
+function faName(name) {
+  if (!name) return "نامشخص";
+  let lower = name.toLowerCase();
+  
+  // حذف کلمات منطقه‌ای آمریکا
+  lower = lower.replace(/, raw.*$/, "").replace(/, california.*$/, "")
+    .replace(/, florida.*$/, "").replace(/, all commercial.*$/, "")
+    .replace(/, hass.*$/, "").replace(/, peeled.*$/, "")
+    .replace(/, fresh.*$/, "").replace(/^oil, /, "").trim();
+  
+  for (const [en, fa] of Object.entries(NAME_FA)) {
+    if (lower.includes(en)) return fa;
+  }
+  return name;
+}
+
+let currentChart = null;
+
+async function fetchFruit(name) {
+  const res = await fetch(`${API_URL}?name=${encodeURIComponent(name)}`);
+  if (!res.ok) throw new Error('خطا در اتصال به سرور');
+  const d = await res.json();
+  if (!d.foods || d.foods.length === 0) return null;
+  
+  // فیلتر نتایج معتبر
+  let valid = d.foods.filter(f => C.includes(f.foodCategory));
+  if (valid.length === 0) valid = d.foods.slice(0, 1);
+  
+  // حذف نتایج تکراری بر اساس نام فارسی
+  const seen = new Set();
+  const unique = [];
+  for (const f of valid) {
+    const fa = faName(f.description);
+    if (!seen.has(fa) && fa !== "نامشخص") {
+      seen.add(fa);
+      unique.push(f);
+    }
+  }
+  
+  return unique.length > 0 ? unique[0] : valid[0];
+}
+
+function getNutrients(food) {
+  const mp = {};
+  (food.foodNutrients || []).forEach(n => { mp[n.nutrientName] = n; });
+  
+  const result = {};
+  N.forEach(k => {
+    if (mp[k]) {
+      const n = mp[k];
+      let val = parseFloat(n.value) || 0;
+      if (k === "Energy" && n.unitName === "kJ") {
+        val = val / 4.184;
+      }
+      result[k] = val;
+    }
+  });
+  return result;
+}
+
+function renderFruitCard(food, persianInput) {
+  const nm = faName(food.description);
+  const ct = tr(food.foodCategory || "");
+  const nutrients = getNutrients(food);
+  
+  let h = `<div class="card"><h2>📦 ${nm}</h2><p class="cat">📁 ${ct}</p>`;
+  h += `<h3 style="color:#333;font-size:1em;">🍎 مواد مغذی (۱۰۰ گرم):</h3>`;
+  
+  const mp = {};
+  (food.foodNutrients || []).forEach(n => { mp[n.nutrientName] = n; });
+  
+  N.forEach(k => {
+    if (mp[k]) {
+      const n = mp[k];
+      let val = n.value || "?";
+      let u = tr(n.unitName || "");
+      if (k === "Energy" && n.unitName === "kJ") {
+        val = (val / 4.184).toFixed(1);
+        u = "کیلوکالری";
+      }
+      h += `<div class="n"><span>${tr(k)}</span><span>${val} ${u}</span></div>`;
+    }
+  });
+  h += `</div>`;
+  
+  return h;
+}
+
+function renderChart(food) {
+  if (currentChart) {
+    currentChart.destroy();
+    currentChart = null;
+  }
+  
+  const nutrients = getNutrients(food);
+  const labels = [];
+  const values = [];
+  
+  // فقط مواد مغذی با مقدار قابل توجه برای نمودار
+  const chartNutrients = ["Protein", "Total lipid (fat)", "Carbohydrate, by difference", "Fiber, total dietary"];
+  
+  chartNutrients.forEach(k => {
+    if (nutrients[k] !== undefined) {
+      labels.push(tr(k));
+      values.push(nutrients[k]);
+    }
+  });
+  
+  const canvas = document.createElement('canvas');
+  canvas.id = 'nutrientChart';
+  
+  const box = document.createElement('div');
+  box.className = 'chart-box';
+  box.innerHTML = '<h3>📊 نمودار درشت‌مغذی‌ها (گرم در ۱۰۰ گرم)</h3>';
+  box.appendChild(canvas);
+  
+  return { box, labels, values };
+}
+
+function renderCompare(food1, food2) {
+  const n1 = getNutrients(food1);
+  const n2 = getNutrients(food2);
+  const name1 = faName(food1.description);
+  const name2 = faName(food2.description);
+  
+  let h = `<div class="cmp-title">⚖️ مقایسه ${name1} و ${name2}</div>`;
+  h += `<div class="cmp-grid">`;
+  
+  N.forEach(k => {
+    if (n1[k] !== undefined || n2[k] !== undefined) {
+      const v1 = n1[k] !== undefined ? n1[k].toFixed(1) : "—";
+      const v2 = n2[k] !== undefined ? n2[k].toFixed(1) : "—";
+      h += `<div class="cmp-item"><b>${tr(k)}</b>${name1}: ${v1}<br>${name2}: ${v2}</div>`;
+    }
+  });
+  
+  h += `</div>`;
+  return h;
+}
+
 async function go() {
   const q = document.getElementById('q').value.trim();
   const r = document.getElementById('r');
   const b = document.getElementById('b');
+  const cmpBox = document.getElementById('cmpBox');
+  const isCompare = cmpBox.style.display !== 'none';
 
   if (!q) {
     r.innerHTML = '<p class="err">لطفاً یک نام وارد کنید.</p>';
@@ -108,57 +282,98 @@ async function go() {
   r.innerHTML = '<p class="load">⏳ لطفاً صبر کنید...</p>';
 
   try {
-    const res = await fetch(`${API_URL}?name=${encodeURIComponent(q)}`);
-    if (!res.ok) throw new Error('خطا در اتصال به سرور');
-
-    const d = await res.json();
-    if (!d.foods || d.foods.length === 0) {
-      r.innerHTML = '<p class="err">❌ اطلاعاتی یافت نشد.</p>';
-      return;
-    }
-
-    let v = d.foods.filter(f => C.includes(f.foodCategory));
-    if (v.length === 0) v = d.foods.slice(0, 1);
-
-    let h = '';
-    v.slice(0, 2).forEach(f => {
-      const nm = f.description || "نامشخص";
-      const ct = tr(f.foodCategory || "");
-      h += `<div class="card"><h2>📦 ${nm}</h2><p class="cat">📁 ${ct}</p><h3 style="color:#333;font-size:1em;">🍎 مواد مغذی (۱۰۰ گرم):</h3>`;
-
-      const mp = {};
-      (f.foodNutrients || []).forEach(n => { mp[n.nutrientName] = n; });
-
-      N.forEach(k => {
-        if (mp[k]) {
-          const n = mp[k];
-          let val = n.value || "?";
-          let u = tr(n.unitName || "");
-          if (k === "Energy" && n.unitName === "kJ") {
-            val = (val / 4.184).toFixed(1);
-            u = "کیلوکالری";
-          }
-          h += `<div class="n"><span>${tr(k)}</span><span>${val} ${u}</span></div>`;
+    if (isCompare) {
+      const q2 = document.getElementById('q2').value.trim();
+      if (!q2) {
+        r.innerHTML = '<p class="err">لطفاً نام میوه دوم را هم وارد کنید.</p>';
+        b.disabled = false;
+        b.textContent = "🔍 جستجو";
+        return;
+      }
+      
+      const [f1, f2] = await Promise.all([fetchFruit(q), fetchFruit(q2)]);
+      
+      if (!f1 || !f2) {
+        r.innerHTML = '<p class="err">❌ یکی از موارد یافت نشد.</p>';
+        return;
+      }
+      
+      let h = renderCompare(f1, f2);
+      
+      // خواص دارویی هر دو
+      if (M[q]) h += `<div class="med"><h3>💊 خواص دارویی ${q}:</h3><p>${M[q]}</p></div>`;
+      if (M[q2]) h += `<div class="med"><h3>💊 خواص دارویی ${q2}:</h3><p>${M[q2]}</p></div>`;
+      
+      r.innerHTML = h;
+      
+    } else {
+      const food = await fetchFruit(q);
+      
+      if (!food) {
+        r.innerHTML = '<p class="err">❌ اطلاعاتی یافت نشد.</p>';
+        return;
+      }
+      
+      let h = renderFruitCard(food, q);
+      
+      if (M[q]) {
+        h += `<div class="med"><h3>💊 خواص دارویی ${q}:</h3><p>${M[q]}</p></div>`;
+      }
+      
+      r.innerHTML = h;
+      
+      // نمودار
+      const chartData = renderChart(food);
+      r.appendChild(chartData.box);
+      
+      // رندر نمودار بعد از اضافه شدن به DOM
+      setTimeout(() => {
+        const ctx = document.getElementById('nutrientChart');
+        if (ctx) {
+          currentChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: chartData.labels,
+              datasets: [{
+                label: 'گرم در ۱۰۰ گرم',
+                data: chartData.values,
+                backgroundColor: ['#2e7d32', '#ef6c00', '#1565c0', '#6a1b9a'],
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { display: false }
+              },
+              scales: {
+                y: { beginAtZero: true, ticks: { font: { family: 'Tahoma' } } },
+                x: { ticks: { font: { family: 'Tahoma' } } }
+              }
+            }
+          });
         }
-      });
-      h += `</div>`;
-    });
-
-    if (M[q]) {
-      h += `<div class="med"><h3>💊 خواص دارویی ${q}:</h3><p>${M[q]}</p></div>`;
+      }, 50);
     }
-
-    r.innerHTML = h;
 
   } catch (e) {
     r.innerHTML = `<p class="err">❌ ${e.message}</p>`;
   } finally {
     b.disabled = false;
-    b.textContent = "جستجو";
+    b.textContent = "🔍 جستجو";
   }
 }
 
+function toggleCompare() {
+  const cmpBox = document.getElementById('cmpBox');
+  const isHidden = cmpBox.style.display === 'none';
+  cmpBox.style.display = isHidden ? 'block' : 'none';
+}
+
 document.getElementById('q').addEventListener('keypress', e => {
+  if (e.key === 'Enter') go();
+});
+document.getElementById('q2')?.addEventListener('keypress', e => {
   if (e.key === 'Enter') go();
 });
 </script>
