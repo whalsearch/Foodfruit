@@ -36,6 +36,7 @@ export default async function handler(req, res) {
 
   let q = m[name];
 
+  // اگه توی دیکشنری نبود، ترجمه خودکار با MyMemory
   if (!q) {
     try {
       const tUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(name)}&langpair=fa|en`;
