@@ -36,6 +36,8 @@ button:disabled { background: #aaa; cursor: not-allowed; }
 </div>
 
 <script>
+const API_URL = "https://foodfruit.vercel.app/api/search";
+
 const T = {
   "Energy": "انرژی", "Protein": "پروتئین", "Total lipid (fat)": "چربی کل",
   "Carbohydrate, by difference": "کربوهیدرات", "Fiber, total dietary": "فیبر",
@@ -106,8 +108,7 @@ async function go() {
   r.innerHTML = '<p class="load">⏳ لطفاً صبر کنید...</p>';
 
   try {
-    // ⚠️ آدرس Vercel خودت رو اینجا بذار
-    const res = await fetch(`https://YOUR-PROJECT.vercel.app/api/search?name=${encodeURIComponent(q)}`);
+    const res = await fetch(`${API_URL}?name=${encodeURIComponent(q)}`);
     if (!res.ok) throw new Error('خطا در اتصال به سرور');
 
     const d = await res.json();
