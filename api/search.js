@@ -8,7 +8,6 @@ export default async function handler(req, res) {
   const { name } = req.query;
   if (!name) return res.status(400).json({ e: 2 });
 
-  // دیکشنری کلمات پرکاربرد
   const m = {
     "آووکادو": "avocado", "سیب": "apple", "پرتقال": "orange",
     "موز": "banana", "هویج": "carrot", "اسفناج": "spinach",
@@ -27,12 +26,16 @@ export default async function handler(req, res) {
     "پیاز": "onion", "سیب زمینی": "potato", "تربچه": "radish",
     "شلغم": "turnip", "قارچ": "mushroom", "ذرت": "corn",
     "نعنا": "mint", "شوید": "dill", "رزماری": "rosemary",
-    "مریم گلی": "sage", "گشنیز": "coriander"
+    "مریم گلی": "sage", "گشنیز": "coriander",
+    "بالنگ": "citron", "خرمالو": "persimmon", "به": "quince",
+    "ازگیل": "medlar", "زالزالک": "hawthorn", "کنار": "jujube",
+    "شنبلیله": "fenugreek", "سیاه دانه": "black seed", "رازیانه": "fennel",
+    "زعفران": "saffron", "گل محمدی": "rose", "گل گاوزبان": "borage",
+    "سنبل الطیب": "valerian", "خار مریم": "milk thistle", "آلوئه ورا": "aloe vera"
   };
 
   let q = m[name];
 
-  // اگه توی دیکشنری نبود، ترجمه خودکار با MyMemory
   if (!q) {
     try {
       const tUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(name)}&langpair=fa|en`;
