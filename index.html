@@ -15,7 +15,6 @@ h1 { color: var(--p); text-align: center; font-size: 1.4em; margin-bottom: 5px; 
 input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 10px; font-family: inherit; }
 button { width: 100%; padding: 12px; background: var(--p); color: #fff; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-family: inherit; margin-bottom: 8px; }
 button:disabled { background: #aaa; cursor: not-allowed; }
-.btn-sec { background: #558b2f; }
 .btn-cmp { background: #ef6c00; }
 #r { margin-top: 20px; line-height: 1.8; }
 .card { margin-bottom: 15px; padding: 15px; background: #f9f9f9; border-radius: 10px; }
@@ -33,8 +32,11 @@ button:disabled { background: #aaa; cursor: not-allowed; }
 .chart-box h3 { color: var(--p); margin: 0 0 10px; font-size: 1em; text-align: center; }
 .cmp-title { text-align: center; color: #ef6c00; font-weight: bold; margin: 20px 0 10px; font-size: 1.1em; }
 .cmp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.cmp-item { text-align: center; padding: 8px; background: #fff3e0; border-radius: 8px; font-size: .9em; }
-.cmp-item b { display: block; color: #e65100; margin-bottom: 4px; }
+.cmp-item { text-align: center; padding: 12px 8px; background: #fff3e0; border-radius: 8px; font-size: .9em; line-height: 1.6; }
+.cmp-item b { display: block; color: #e65100; margin-bottom: 8px; font-size: 1em; padding-bottom: 6px; border-bottom: 1px solid #ffcc80; }
+.cmp-item .row { display: flex; justify-content: space-between; padding: 3px 0; }
+.cmp-item .row span:last-child { font-weight: bold; color: #222; }
+.cmp-hint { font-size: .85em; color: #777; text-align: center; margin-bottom: 10px; }
 </style>
 </head>
 <body>
@@ -44,6 +46,7 @@ button:disabled { background: #aaa; cursor: not-allowed; }
 <input type="text" id="q" placeholder="نام را وارد کنید..." autocomplete="off">
 <button id="b" onclick="go()">🔍 جستجو</button>
 <button class="btn-cmp" onclick="toggleCompare()">⚖️ مقایسه دو میوه</button>
+<div id="cmpHint" class="cmp-hint" style="display:none;">نام میوه دوم را وارد کنید و دکمه جستجو را بزنید</div>
 <div id="cmpBox" style="display:none;">
   <input type="text" id="q2" placeholder="میوه دوم برای مقایسه..." autocomplete="off">
 </div>
@@ -65,6 +68,7 @@ const T = {
   "G": "گرم", "MG": "میلی‌گرم", "UG": "میکروگرم"
 };
 
+// دیکشنری خواص دارویی
 const M = {
   "آووکادو": "سلامت قلب (چربی مفید)، کاهش کلسترول، تقویت بینایی، سلامت پوست",
   "سیب": "تقویت ایمنی، کاهش التهاب، سلامت قلب، پیشگیری از دیابت نوع ۲",
@@ -99,10 +103,26 @@ const M = {
   "ریحان": "ضد التهاب، آرام‌بخش، بهبود گوارش",
   "جعفری": "سم‌زدایی، تقویت ایمنی، سلامت کلیه",
   "آویشن": "ضد باکتری، ضد سرفه، تقویت ایمنی",
-  "اسطوخودوس": "آرام‌بخش، بهبود خواب، کاهش اضطراب"
+  "اسطوخودوس": "آرام‌بخش، بهبود خواب، کاهش اضطراب",
+  "کدو سبز": "کم‌کالری، سلامت قلب، بهبود گوارش",
+  "کدو تنبل": "تقویت بینایی، سلامت پوست، تقویت ایمنی",
+  "بروکلی": "ضد سرطان، تقویت ایمنی، سلامت استخوان",
+  "گل کلم": "ضد سرطان، سلامت قلب، تقویت ایمنی",
+  "کاهو": "آبرسانی، بهبود خواب، سلامت چشم",
+  "پیاز": "ضد التهاب، سلامت قلب، تقویت ایمنی",
+  "سیب زمینی": "انرژی‌بخش، سلامت گوارش، تقویت ایمنی",
+  "تربچه": "سلامت کبد، ضد التهاب، تقویت ایمنی",
+  "شلغم": "تقویت ایمنی، سلامت ریه، ضد التهاب",
+  "قارچ": "تقویت ایمنی، سلامت استخوان، آنتی‌اکسیدان",
+  "ذرت": "انرژی‌بخش، سلامت چشم، تقویت ایمنی",
+  "نعنا": "بهبود هضم، تسکین سردرد، رفع نفخ",
+  "شوید": "بهبود گوارش، آرام‌بخش، ضد نفخ",
+  "رزماری": "تقویت حافظه، آنتی‌اکسیدان، ضد التهاب",
+  "مریم گلی": "آرام‌بخش، بهبود گوارش، ضد التهاب",
+  "گشنیز": "سم‌زدایی، بهبود گوارش، ضد التهاب"
 };
 
-// ترجمه نام‌های انگلیسی میوه‌ها
+// ترجمه نام انگلیسی میوه‌ها
 const NAME_FA = {
   "avocado": "آووکادو", "apple": "سیب", "orange": "پرتقال",
   "banana": "موز", "carrot": "هویج", "spinach": "اسفناج",
@@ -115,7 +135,12 @@ const NAME_FA = {
   "olive": "زیتون", "fig": "انجیر", "coconut": "نارگیل",
   "blueberry": "بلوبری", "chamomile": "بابونه", "cinnamon": "دارچین",
   "basil": "ریحان", "parsley": "جعفری", "thyme": "آویشن",
-  "lavender": "اسطوخودوس"
+  "lavender": "اسطوخودوس", "pumpkin": "کدو تنبل", "zucchini": "کدو سبز",
+  "squash": "کدو", "broccoli": "بروکلی", "cauliflower": "گل کلم",
+  "lettuce": "کاهو", "onion": "پیاز", "potato": "سیب زمینی",
+  "radish": "تربچه", "turnip": "شلغم", "mushroom": "قارچ",
+  "corn": "ذرت", "mint": "نعنا", "dill": "شوید",
+  "rosemary": "رزماری", "sage": "مریم گلی", "coriander": "گشنیز"
 };
 
 const N = ["Energy","Protein","Total lipid (fat)","Carbohydrate, by difference","Fiber, total dietary","Water","Potassium, K","Calcium, Ca","Iron, Fe","Vitamin C, total ascorbic acid","Vitamin A, RAE"];
@@ -124,17 +149,13 @@ const C = ["Fruits and Fruit Juices","Vegetables and Vegetable Products","Nut an
 
 const tr = t => T[t] || t;
 
-// ترجمه نام انگلیسی به فارسی + حذف مناطق آمریکا
 function faName(name) {
   if (!name) return "نامشخص";
   let lower = name.toLowerCase();
-  
-  // حذف کلمات منطقه‌ای آمریکا
   lower = lower.replace(/, raw.*$/, "").replace(/, california.*$/, "")
     .replace(/, florida.*$/, "").replace(/, all commercial.*$/, "")
     .replace(/, hass.*$/, "").replace(/, peeled.*$/, "")
     .replace(/, fresh.*$/, "").replace(/^oil, /, "").trim();
-  
   for (const [en, fa] of Object.entries(NAME_FA)) {
     if (lower.includes(en)) return fa;
   }
@@ -148,12 +169,8 @@ async function fetchFruit(name) {
   if (!res.ok) throw new Error('خطا در اتصال به سرور');
   const d = await res.json();
   if (!d.foods || d.foods.length === 0) return null;
-  
-  // فیلتر نتایج معتبر
   let valid = d.foods.filter(f => C.includes(f.foodCategory));
   if (valid.length === 0) valid = d.foods.slice(0, 1);
-  
-  // حذف نتایج تکراری بر اساس نام فارسی
   const seen = new Set();
   const unique = [];
   for (const f of valid) {
@@ -163,39 +180,31 @@ async function fetchFruit(name) {
       unique.push(f);
     }
   }
-  
   return unique.length > 0 ? unique[0] : valid[0];
 }
 
 function getNutrients(food) {
   const mp = {};
   (food.foodNutrients || []).forEach(n => { mp[n.nutrientName] = n; });
-  
   const result = {};
   N.forEach(k => {
     if (mp[k]) {
       const n = mp[k];
       let val = parseFloat(n.value) || 0;
-      if (k === "Energy" && n.unitName === "kJ") {
-        val = val / 4.184;
-      }
+      if (k === "Energy" && n.unitName === "kJ") val = val / 4.184;
       result[k] = val;
     }
   });
   return result;
 }
 
-function renderFruitCard(food, persianInput) {
+function renderFruitCard(food) {
   const nm = faName(food.description);
   const ct = tr(food.foodCategory || "");
-  const nutrients = getNutrients(food);
-  
   let h = `<div class="card"><h2>📦 ${nm}</h2><p class="cat">📁 ${ct}</p>`;
   h += `<h3 style="color:#333;font-size:1em;">🍎 مواد مغذی (۱۰۰ گرم):</h3>`;
-  
   const mp = {};
   (food.foodNutrients || []).forEach(n => { mp[n.nutrientName] = n; });
-  
   N.forEach(k => {
     if (mp[k]) {
       const n = mp[k];
@@ -209,38 +218,25 @@ function renderFruitCard(food, persianInput) {
     }
   });
   h += `</div>`;
-  
   return h;
 }
 
 function renderChart(food) {
-  if (currentChart) {
-    currentChart.destroy();
-    currentChart = null;
-  }
-  
+  if (currentChart) { currentChart.destroy(); currentChart = null; }
   const nutrients = getNutrients(food);
-  const labels = [];
-  const values = [];
-  
-  // فقط مواد مغذی با مقدار قابل توجه برای نمودار
-  const chartNutrients = ["Protein", "Total lipid (fat)", "Carbohydrate, by difference", "Fiber, total dietary"];
-  
-  chartNutrients.forEach(k => {
+  const labels = [], values = [];
+  ["Protein", "Total lipid (fat)", "Carbohydrate, by difference", "Fiber, total dietary"].forEach(k => {
     if (nutrients[k] !== undefined) {
       labels.push(tr(k));
       values.push(nutrients[k]);
     }
   });
-  
   const canvas = document.createElement('canvas');
   canvas.id = 'nutrientChart';
-  
   const box = document.createElement('div');
   box.className = 'chart-box';
   box.innerHTML = '<h3>📊 نمودار درشت‌مغذی‌ها (گرم در ۱۰۰ گرم)</h3>';
   box.appendChild(canvas);
-  
   return { box, labels, values };
 }
 
@@ -249,19 +245,18 @@ function renderCompare(food1, food2) {
   const n2 = getNutrients(food2);
   const name1 = faName(food1.description);
   const name2 = faName(food2.description);
-  
   let h = `<div class="cmp-title">⚖️ مقایسه ${name1} و ${name2}</div>`;
   h += `<div class="cmp-grid">`;
-  
+  h += `<div class="cmp-item"><b>🥑 ${name1}</b>`;
   N.forEach(k => {
-    if (n1[k] !== undefined || n2[k] !== undefined) {
-      const v1 = n1[k] !== undefined ? n1[k].toFixed(1) : "—";
-      const v2 = n2[k] !== undefined ? n2[k].toFixed(1) : "—";
-      h += `<div class="cmp-item"><b>${tr(k)}</b>${name1}: ${v1}<br>${name2}: ${v2}</div>`;
-    }
+    if (n1[k] !== undefined) h += `<div class="row"><span>${tr(k)}</span><span>${n1[k].toFixed(1)}</span></div>`;
   });
-  
   h += `</div>`;
+  h += `<div class="cmp-item"><b>🥭 ${name2}</b>`;
+  N.forEach(k => {
+    if (n2[k] !== undefined) h += `<div class="row"><span>${tr(k)}</span><span>${n2[k].toFixed(1)}</span></div>`;
+  });
+  h += `</div></div>`;
   return h;
 }
 
@@ -290,43 +285,26 @@ async function go() {
         b.textContent = "🔍 جستجو";
         return;
       }
-      
       const [f1, f2] = await Promise.all([fetchFruit(q), fetchFruit(q2)]);
-      
       if (!f1 || !f2) {
         r.innerHTML = '<p class="err">❌ یکی از موارد یافت نشد.</p>';
         return;
       }
-      
       let h = renderCompare(f1, f2);
-      
-      // خواص دارویی هر دو
       if (M[q]) h += `<div class="med"><h3>💊 خواص دارویی ${q}:</h3><p>${M[q]}</p></div>`;
       if (M[q2]) h += `<div class="med"><h3>💊 خواص دارویی ${q2}:</h3><p>${M[q2]}</p></div>`;
-      
       r.innerHTML = h;
-      
     } else {
       const food = await fetchFruit(q);
-      
       if (!food) {
         r.innerHTML = '<p class="err">❌ اطلاعاتی یافت نشد.</p>';
         return;
       }
-      
-      let h = renderFruitCard(food, q);
-      
-      if (M[q]) {
-        h += `<div class="med"><h3>💊 خواص دارویی ${q}:</h3><p>${M[q]}</p></div>`;
-      }
-      
+      let h = renderFruitCard(food);
+      if (M[q]) h += `<div class="med"><h3>💊 خواص دارویی ${q}:</h3><p>${M[q]}</p></div>`;
       r.innerHTML = h;
-      
-      // نمودار
       const chartData = renderChart(food);
       r.appendChild(chartData.box);
-      
-      // رندر نمودار بعد از اضافه شدن به DOM
       setTimeout(() => {
         const ctx = document.getElementById('nutrientChart');
         if (ctx) {
@@ -343,9 +321,7 @@ async function go() {
             },
             options: {
               responsive: true,
-              plugins: {
-                legend: { display: false }
-              },
+              plugins: { legend: { display: false } },
               scales: {
                 y: { beginAtZero: true, ticks: { font: { family: 'Tahoma' } } },
                 x: { ticks: { font: { family: 'Tahoma' } } }
@@ -355,7 +331,6 @@ async function go() {
         }
       }, 50);
     }
-
   } catch (e) {
     r.innerHTML = `<p class="err">❌ ${e.message}</p>`;
   } finally {
@@ -366,8 +341,10 @@ async function go() {
 
 function toggleCompare() {
   const cmpBox = document.getElementById('cmpBox');
+  const cmpHint = document.getElementById('cmpHint');
   const isHidden = cmpBox.style.display === 'none';
   cmpBox.style.display = isHidden ? 'block' : 'none';
+  cmpHint.style.display = isHidden ? 'block' : 'none';
 }
 
 document.getElementById('q').addEventListener('keypress', e => {
