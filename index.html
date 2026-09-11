@@ -24,10 +24,10 @@ button:disabled { background: #aaa; cursor: not-allowed; }
 .n:last-child { border-bottom: none; }
 .n span:first-child { color: #555; }
 .n span:last-child { font-weight: bold; color: #222; }
-.n.max { background: #e8f5e9; padding: 8px 10px; border-radius: 6px; margin: 4px -10px; border-bottom: none; }
-.n.max span { color: #1b5e20; font-weight: bold; font-size: 1.05em; }
+.n.max span { color: #1b5e20; font-weight: bold; }
 .med { margin-top: 15px; padding: 15px; background: #e8f5e9; border-radius: 10px; }
 .med h3 { color: var(--p); margin: 0 0 8px; font-size: 1em; }
+.med small { color: #666; font-size: .8em; display: block; margin-top: 6px; font-style: italic; }
 .err { color: #d32f2f; text-align: center; }
 .load { color: #666; text-align: center; }
 .chart-box { margin-top: 15px; padding: 15px; background: #fff; border-radius: 10px; border: 1px solid #e0e0e0; }
@@ -45,13 +45,17 @@ button:disabled { background: #aaa; cursor: not-allowed; }
 <div class="box">
 <h1>🍎🍊🥕 دانشنامه میوه و گیاه</h1>
 <p class="hint">نام میوه یا گیاه را وارد کنید</p>
+
 <input type="text" id="q" placeholder="نام را وارد کنید..." autocomplete="off">
 <button id="b" onclick="go()">🔍 جستجو</button>
+
 <button class="btn-cmp" onclick="toggleCompare()">⚖️ مقایسه دو میوه</button>
-<div id="cmpHint" class="cmp-hint" style="display:none;">نام میوه دوم را وارد کنید و دکمه جستجو را بزنید</div>
+<div id="cmpHint" class="cmp-hint" style="display:none;">نام میوه دوم را وارد کنید و دکمه «مقایسه کن» را بزنید</div>
 <div id="cmpBox" style="display:none;">
   <input type="text" id="q2" placeholder="میوه دوم برای مقایسه..." autocomplete="off">
+  <button id="cmpBtn" onclick="goCompare()" style="background:#ef6c00;">⚖️ مقایسه کن</button>
 </div>
+
 <div id="r"></div>
 </div>
 
@@ -135,7 +139,6 @@ const M = {
   "گل گاوزبان": "آرام‌بخش، ضد التهاب، سلامت کبد",
   "سنبل الطیب": "آرام‌بخش، بهبود خواب، کاهش اضطراب",
   "خار مریم": "سلامت کبد، سم‌زدایی، آنتی‌اکسیدان",
-  "اسطوخودوس": "آرام‌بخش، بهبود خواب، کاهش اضطراب",
   "آلوئه ورا": "سلامت پوست، بهبود گوارش، تقویت ایمنی"
 };
 
@@ -313,7 +316,6 @@ function renderCompare(food1, food2) {
   const name1 = faName(food1.description);
   const name2 = faName(food2.description);
   
-  // پیدا کردن بیشترین مقدار در هر میوه
   let max1 = 0, maxN1 = null;
   let max2 = 0, maxN2 = null;
   N.forEach(k => {
@@ -346,8 +348,6 @@ async function go() {
   const q = document.getElementById('q').value.trim();
   const r = document.getElementById('r');
   const b = document.getElementById('b');
-  const cmpBox = document.getElementById('cmpBox');
-  const isCompare = cmpBox.style.display !== 'none';
 
   if (!q) {
     r.innerHTML = '<p class="err">لطفاً یک نام وارد کنید.</p>';
@@ -359,92 +359,109 @@ async function go() {
   r.innerHTML = '<p class="load">⏳ لطفاً صبر کنید...</p>';
 
   try {
-    if (isCompare) {
-      const q2 = document.getElementById('q2').value.trim();
-      if (!q2) {
-        r.innerHTML = '<p class="err">لطفاً نام میوه دوم را هم وارد کنید.</p>';
-        b.disabled = false;
-        b.textContent = "🔍 جستجو";
-        return;
-      }
-      const [f1, f2] = await Promise.all([fetchFruit(q), fetchFruit(q2)]);
-      if (!f1 || !f2) {
-        r.innerHTML = '<p class="err">❌ یکی از موارد یافت نشد.</p>';
-        return;
-      }
-      let h = renderCompare(f1, f2);
-      if (M[q]) h += `<div class="med"><h3>💊 خواص دارویی ${q}:</h3><p>${M[q]}</p></div>`;
-      if (M[q2]) h += `<div class="med"><h3>💊 خواص دارویی ${q2}:</h3><p>${M[q2]}</p></div>`;
-      r.innerHTML = h;
-    } else {
-      const food = await fetchFruit(q);
-      if (!food) {
-        r.innerHTML = '<p class="err">❌ اطلاعاتی یافت نشد.</p>';
-        return;
-      }
-      let h = renderFruitCard(food);
-      if (M[q]) h += `<div class="med"><h3>💊 خواص دارویی ${q}:</h3><p>${M[q]}</p></div>`;
-      r.innerHTML = h;
-      
-      // نمودارها
-      const chartData = renderChart(food);
-      r.appendChild(chartData.container);
-      
-      setTimeout(() => {
-        const ctx1 = document.getElementById('macroChart');
-        if (ctx1 && chartData.macroValues.length > 0) {
-          currentChart = new Chart(ctx1, {
-            type: 'bar',
-            data: {
-              labels: chartData.macroLabels,
-              datasets: [{
-                label: 'گرم در ۱۰۰ گرم',
-                data: chartData.macroValues,
-                backgroundColor: ['#2e7d32', '#ef6c00', '#1565c0', '#6a1b9a'],
-                borderRadius: 8
-              }]
-            },
-            options: {
-              responsive: true,
-              plugins: { legend: { display: false } },
-              scales: {
-                y: { beginAtZero: true, ticks: { font: { family: 'Tahoma' } } },
-                x: { ticks: { font: { family: 'Tahoma' } } }
-              }
-            }
-          });
-        }
-        
-        const ctx2 = document.getElementById('microChart');
-        if (ctx2 && chartData.microValues.length > 0) {
-          currentChart2 = new Chart(ctx2, {
-            type: 'bar',
-            data: {
-              labels: chartData.microLabels,
-              datasets: [{
-                label: 'میلی‌گرم در ۱۰۰ گرم',
-                data: chartData.microValues,
-                backgroundColor: ['#c62828', '#f9a825', '#00838f', '#6a1b9a', '#2e7d32', '#1565c0'],
-                borderRadius: 8
-              }]
-            },
-            options: {
-              responsive: true,
-              plugins: { legend: { display: false } },
-              scales: {
-                y: { beginAtZero: true, ticks: { font: { family: 'Tahoma' } } },
-                x: { ticks: { font: { family: 'Tahoma' } } }
-              }
-            }
-          });
-        }
-      }, 50);
+    const food = await fetchFruit(q);
+    if (!food) {
+      r.innerHTML = '<p class="err">❌ اطلاعاتی یافت نشد.</p>';
+      return;
     }
+    let h = renderFruitCard(food);
+    if (M[q]) h += `<div class="med"><h3>💊 خواص دارویی ${q}:</h3><p>${M[q]}</p><small>⚠️ این اطلاعات از منابع طب سنتی و مطالعات علمی جمع‌آوری شده و جایگزین مشاوره پزشک نیست.</small></div>`;
+    r.innerHTML = h;
+    
+    const chartData = renderChart(food);
+    r.appendChild(chartData.container);
+    
+    setTimeout(() => {
+      const ctx1 = document.getElementById('macroChart');
+      if (ctx1 && chartData.macroValues.length > 0) {
+        currentChart = new Chart(ctx1, {
+          type: 'bar',
+          data: {
+            labels: chartData.macroLabels,
+            datasets: [{
+              label: 'گرم در ۱۰۰ گرم',
+              data: chartData.macroValues,
+              backgroundColor: ['#2e7d32', '#ef6c00', '#1565c0', '#6a1b9a'],
+              borderRadius: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: true, ticks: { font: { family: 'Tahoma' } } },
+              x: { ticks: { font: { family: 'Tahoma' } } }
+            }
+          }
+        });
+      }
+      
+      const ctx2 = document.getElementById('microChart');
+      if (ctx2 && chartData.microValues.length > 0) {
+        currentChart2 = new Chart(ctx2, {
+          type: 'bar',
+          data: {
+            labels: chartData.microLabels,
+            datasets: [{
+              label: 'میلی‌گرم در ۱۰۰ گرم',
+              data: chartData.microValues,
+              backgroundColor: ['#c62828', '#f9a825', '#00838f', '#6a1b9a', '#2e7d32', '#1565c0'],
+              borderRadius: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: true, ticks: { font: { family: 'Tahoma' } } },
+              x: { ticks: { font: { family: 'Tahoma' } } }
+            }
+          }
+        });
+      }
+    }, 50);
   } catch (e) {
     r.innerHTML = `<p class="err">❌ ${e.message}</p>`;
   } finally {
     b.disabled = false;
     b.textContent = "🔍 جستجو";
+  }
+}
+
+async function goCompare() {
+  const q = document.getElementById('q').value.trim();
+  const q2 = document.getElementById('q2').value.trim();
+  const r = document.getElementById('r');
+  const cmpBtn = document.getElementById('cmpBtn');
+
+  if (!q) {
+    r.innerHTML = '<p class="err">لطفاً نام میوه اول را وارد کنید.</p>';
+    return;
+  }
+  if (!q2) {
+    r.innerHTML = '<p class="err">لطفاً نام میوه دوم را هم وارد کنید.</p>';
+    return;
+  }
+
+  cmpBtn.disabled = true;
+  cmpBtn.textContent = "در حال مقایسه...";
+  r.innerHTML = '<p class="load">⏳ لطفاً صبر کنید...</p>';
+
+  try {
+    const [f1, f2] = await Promise.all([fetchFruit(q), fetchFruit(q2)]);
+    if (!f1 || !f2) {
+      r.innerHTML = '<p class="err">❌ یکی از موارد یافت نشد.</p>';
+      return;
+    }
+    let h = renderCompare(f1, f2);
+    if (M[q]) h += `<div class="med"><h3>💊 خواص دارویی ${q}:</h3><p>${M[q]}</p></div>`;
+    if (M[q2]) h += `<div class="med"><h3>💊 خواص دارویی ${q2}:</h3><p>${M[q2]}</p></div>`;
+    r.innerHTML = h;
+  } catch (e) {
+    r.innerHTML = `<p class="err">❌ ${e.message}</p>`;
+  } finally {
+    cmpBtn.disabled = false;
+    cmpBtn.textContent = "⚖️ مقایسه کن";
   }
 }
 
@@ -460,7 +477,7 @@ document.getElementById('q').addEventListener('keypress', e => {
   if (e.key === 'Enter') go();
 });
 document.getElementById('q2')?.addEventListener('keypress', e => {
-  if (e.key === 'Enter') go();
+  if (e.key === 'Enter') goCompare();
 });
 </script>
 </body>
