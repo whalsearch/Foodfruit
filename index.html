@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🍎 دانشنامه میوه و گیاه</title>
+<style>
+:root { --p: #2e7d32; --bg: #f1f8e9; }
+* { box-sizing: border-box; }
+body { font-family: Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
+.box { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,.1); }
+h1 { color: var(--p); text-align: center; font-size: 1.4em; }
+.hint { text-align: center; color: #666; font-size: .9em; }
+input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; margin-bottom: 12px; font-family: inherit; }
+button { width: 100%; padding: 12px; background: var(--p); color: #fff; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; font-family: inherit; }
+button:disabled { background: #aaa; cursor: not-allowed; }
+#r { margin-top: 20px; line-height: 1.8; }
+.card { margin-bottom: 15px; padding: 15px; background: #f9f9f9; border-radius: 10px; }
+.card h2 { color: var(--p); margin: 0 0 5px; font-size: 1.1em; }
+.cat { color: #888; font-size: .85em; margin: 0 0 10px; }
+.n { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed #eee; font-size: .95em; }
+.n:last-child { border-bottom: none; }
+.med { margin-top: 15px; padding: 15px; background: #e8f5e9; border-radius: 10px; }
+.med h3 { color: var(--p); margin: 0 0 8px; font-size: 1em; }
+.err { color: #d32f2f; text-align: center; }
+.load { color: #666; text-align: center; }
+</style>
+</head>
+<body>
+<div class="box">
+<h1>🍎🍊🥕 دانشنامه میوه و گیاه</h1>
+<p class="hint">نام میوه یا گیاه را وارد کنید (سیب، آووکادو، زنجبیل...)</p>
+<input type="text" id="q" placeholder="نام را وارد کنید..." autocomplete="off">
+<button id="b" onclick="go()">جستجو</button>
+<div id="r"></div>
+</div>
+
+<script>
+const T = {
+  "Energy": "انرژی", "Protein": "پروتئین", "Total lipid (fat)": "چربی کل",
+  "Carbohydrate, by difference": "کربوهیدرات", "Fiber, total dietary": "فیبر",
+  "Sugars, total including NLEA": "قند", "Water": "آب",
+  "Potassium, K": "پتاسیم", "Calcium, Ca": "کلسیم", "Iron, Fe": "آهن",
+  "Magnesium, Mg": "منیزیم", "Vitamin C, total ascorbic acid": "ویتامین C",
+  "Vitamin A, RAE": "ویتامین A", "Vitamin E (alpha-tocopherol)": "ویتامین E",
+  "Vitamin K (phylloquinone)": "ویتامین K", "Folate, total": "فولات",
+  "Vitamin B-6": "ویتامین B6", "KCAL": "کیلوکالری", "kJ": "کیلوژول",
+  "G": "گرم", "MG": "میلی‌گرم", "UG": "میکروگرم"
+};
+
+const M = {
+  "آووکادو": "سلامت قلب (چربی مفید)، کاهش کلسترول، تقویت بینایی، سلامت پوست",
+  "سیب": "تقویت ایمنی، کاهش التهاب، سلامت قلب، پیشگیری از دیابت نوع ۲",
+  "پرتقال": "پیشگیری از سرماخوردگی، کاهش فشار خون، ضد التهاب",
+  "موز": "تنظیم فشار خون، کاهش افسردگی، سلامت قلب",
+  "هویج": "آنتی‌اکسیدان، پیشگیری از سرطان، سلامت قلب، تقویت بینایی",
+  "اسفناج": "پیشگیری از کم‌خونی، کاهش فشار خون، ضد سرطان",
+  "گوجه": "پیشگیری از سرطان پروستات، سلامت قلب، کاهش التهاب",
+  "خیار": "ضد التهاب، کاهش فشار خون، سم‌زدایی",
+  "زنجبیل": "ضد تهوع، ضد التهاب، کاهش درد مفاصل، تقویت ایمنی",
+  "زردچوبه": "ضد التهاب قوی، آنتی‌اکسیدان، سلامت کبد",
+  "سیر": "کاهش فشار خون، کاهش کلسترول، ضد سرطان، تقویت ایمنی",
+  "انار": "سلامت قلب، کاهش فشار خون، ضد التهاب، پیشگیری از سرطان",
+  "توت‌فرنگی": "آنتی‌اکسیدان، سلامت قلب، تنظیم قند خون",
+  "کیوی": "بهبود خواب، سلامت پوست، ضد آسم",
+  "لیمو": "کمک به هضم، ضد سنگ کلیه، سلامت پوست",
+  "انبه": "تقویت ایمنی، سلامت پوست، بهبود گوارش",
+  "آناناس": "ضد التهاب، بهبود گوارش، تقویت ایمنی",
+  "هندوانه": "آبرسانی، سلامت قلب، ضد التهاب",
+  "انگور": "آنتی‌اکسیدان، سلامت قلب، کاهش فشار خون",
+  "کلم": "ضد سرطان، سلامت گوارش، تقویت ایمنی",
+  "کرفس": "کاهش فشار خون، ضد التهاب، سم‌زدایی",
+  "فلفل دلمه": "تقویت ایمنی، سلامت چشم، آنتی‌اکسیدان",
+  "بادمجان": "سلامت قلب، کاهش کلسترول، آنتی‌اکسیدان",
+  "چغندر": "کاهش فشار خون، تقویت ورزشکاری، سم‌زدایی کبد",
+  "زیتون": "سلامت قلب، کاهش التهاب، آنتی‌اکسیدان",
+  "انجیر": "بهبود گوارش، تقویت استخوان، تنظیم قند خون",
+  "نارگیل": "انرژی‌بخش، تقویت ایمنی، سلامت پوست",
+  "بلوبری": "آنتی‌اکسیدان قوی، سلامت مغز، بهبود حافظه",
+  "بابونه": "آرام‌بخش، بهبود خواب، کاهش اضطراب",
+  "دارچین": "کاهش قند خون، ضد التهاب، آنتی‌اکسیدان",
+  "ریحان": "ضد التهاب، آرام‌بخش، بهبود گوارش",
+  "جعفری": "سم‌زدایی، تقویت ایمنی، سلامت کلیه",
+  "آویشن": "ضد باکتری، ضد سرفه، تقویت ایمنی",
+  "اسطوخودوس": "آرام‌بخش، بهبود خواب، کاهش اضطراب"
+};
+
+const N = ["Energy","Protein","Total lipid (fat)","Carbohydrate, by difference","Fiber, total dietary","Water","Potassium, K","Calcium, Ca","Iron, Fe","Vitamin C, total ascorbic acid","Vitamin A, RAE"];
+
+const C = ["Fruits and Fruit Juices","Vegetables and Vegetable Products","Nut and Seed Products","Spices and Herbs","Legumes and Legume Products"];
+
+const tr = t => T[t] || t;
+
+async function go() {
+  const q = document.getElementById('q').value.trim();
+  const r = document.getElementById('r');
+  const b = document.getElementById('b');
+
+  if (!q) {
+    r.innerHTML = '<p class="err">لطفاً یک نام وارد کنید.</p>';
+    return;
+  }
+
+  b.disabled = true;
+  b.textContent = "در حال جستجو...";
+  r.innerHTML = '<p class="load">⏳ لطفاً صبر کنید...</p>';
+
+  try {
+    // ⚠️ آدرس Vercel خودت رو اینجا بذار
+    const res = await fetch(`https://YOUR-PROJECT.vercel.app/api/search?name=${encodeURIComponent(q)}`);
+    if (!res.ok) throw new Error('خطا در اتصال به سرور');
+
+    const d = await res.json();
+    if (!d.foods || d.foods.length === 0) {
+      r.innerHTML = '<p class="err">❌ اطلاعاتی یافت نشد.</p>';
+      return;
+    }
+
+    let v = d.foods.filter(f => C.includes(f.foodCategory));
+    if (v.length === 0) v = d.foods.slice(0, 1);
+
+    let h = '';
+    v.slice(0, 2).forEach(f => {
+      const nm = f.description || "نامشخص";
+      const ct = tr(f.foodCategory || "");
+      h += `<div class="card"><h2>📦 ${nm}</h2><p class="cat">📁 ${ct}</p><h3 style="color:#333;font-size:1em;">🍎 مواد مغذی (۱۰۰ گرم):</h3>`;
+
+      const mp = {};
+      (f.foodNutrients || []).forEach(n => { mp[n.nutrientName] = n; });
+
+      N.forEach(k => {
+        if (mp[k]) {
+          const n = mp[k];
+          let val = n.value || "?";
+          let u = tr(n.unitName || "");
+          if (k === "Energy" && n.unitName === "kJ") {
+            val = (val / 4.184).toFixed(1);
+            u = "کیلوکالری";
+          }
+          h += `<div class="n"><span>${tr(k)}</span><span>${val} ${u}</span></div>`;
+        }
+      });
+      h += `</div>`;
+    });
+
+    if (M[q]) {
+      h += `<div class="med"><h3>💊 خواص دارویی ${q}:</h3><p>${M[q]}</p></div>`;
+    }
+
+    r.innerHTML = h;
+
+  } catch (e) {
+    r.innerHTML = `<p class="err">❌ ${e.message}</p>`;
+  } finally {
+    b.disabled = false;
+    b.textContent = "جستجو";
+  }
+}
+
+document.getElementById('q').addEventListener('keypress', e => {
+  if (e.key === 'Enter') go();
+});
+</script>
+</body>
+</html>
